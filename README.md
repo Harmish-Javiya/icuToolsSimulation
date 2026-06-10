@@ -28,5 +28,5 @@ Ensure you have Python 3.10+ installed on your host system.
 
 1. **Clone the repository and enter the root directory:**
    ```bash
-   git clone <your-repository-url>
-   cd ICU_Telemetry_Suite
+   git clone https://github.com/Harmish-Javiya/icuToolsSimulation
+   cd icuToolsSimulation
