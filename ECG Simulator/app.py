@@ -15,7 +15,7 @@ from src.ecgLogging import DataLogger
 ui.dark_mode().enable()
 
 ecg = ECGEngine(heart_rate=75.0)
-hardware = HardwareInterface(mode="Ethernet", ip="127.0.0.1", net_port=5005)
+hardware = HardwareInterface(mode="RS232", serial_port="/tmp/ttyV0", baudrate=9600)
 alarm_sys = CardiacAlarmSystem()
 csv_logger = DataLogger()
 
