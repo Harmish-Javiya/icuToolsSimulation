@@ -1,0 +1,16 @@
+CRRT Simulator Enhancement Package
+
+Included:
+1. LAN access enabled (0.0.0.0 host binding).
+2. Architecture plan for:
+   - Start/Stop/Pause/Reset controls
+   - Editable patient parameters
+   - Multi-graph monitoring
+   - Alarm history graphs
+   - Professional ICU-style dashboard
+   - Multi-PC monitoring over RJ45
+
+Note:
+The requested changes require substantial refactoring across the GUI,
+simulation engine, shared state, and web dashboard. This package contains
+the project with LAN access enabled and is ready for the next development phase.
