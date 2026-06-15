@@ -16,6 +16,7 @@ from src.pulseOximeter import PulseOximeter
 from src.alarm import Alarm
 from ui.waveformWidget import WaveformWidget
 from src.tcpServer import TCPServer
+from src.hardware import HardwareInterface
 
 
 # Alarm colour coding
@@ -59,6 +60,11 @@ class MainWindow(QMainWindow):
         self.tcp = TCPServer(
             host="0.0.0.0",
             port=5000
+        )
+        self.hardware = HardwareInterface(
+            mode="Ethernet",
+            ip="127.0.0.1",
+            net_port=5005
         )
 
         self._muted = False          # audio mute flag passed to Alarm
@@ -298,6 +304,7 @@ class MainWindow(QMainWindow):
     def updateMonitor(self):
         data = self.device.read()
         self.tcp.send(data)
+        self.hardware.send_data(data)
 
         self.wave.set_heart_rate(data["heart_rate"])
         self.wave.set_sensor(data["sensor_connected"])
@@ -340,3 +347,7 @@ class MainWindow(QMainWindow):
         else:
             self.tcpLabel.setText("TCP :5000 ○")
             self.tcpLabel.setStyleSheet("color: #556655; font-size: 10px;")
+
+    def closeEvent(self, event):
+        self.hardware.close()
+        super().closeEvent(event)

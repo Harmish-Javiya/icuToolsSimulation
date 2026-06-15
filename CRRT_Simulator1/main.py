@@ -5,6 +5,7 @@ import time
 
 from database.database import Database
 from engines.scenario_engine import ScenarioEngine
+from hardware import HardwareInterface
 from models.crrt_machine import CRRTMachine
 from models.fluid_balance import FluidBalance
 from network.shared_state import get_simulator_state
@@ -28,6 +29,7 @@ class SimulatorController:
         self.fluid = FluidBalance()
         self.scenario = ScenarioEngine()
         self.alarm_engine = AlarmEngine()
+        self.hardware = HardwareInterface(mode="Ethernet", ip="127.0.0.1", net_port=5008)
         self.db = Database()
         self.stop_event = threading.Event()
         self.lock = threading.Lock()
@@ -95,6 +97,7 @@ class SimulatorController:
 
         snapshot = self._build_snapshot(alarms)
         self.state_manager.update_snapshot(snapshot)
+        self.hardware.send_data(snapshot)
         self.state_manager.append_sample(
             {
                 "step": self.step,
@@ -128,6 +131,7 @@ class SimulatorController:
             time.sleep(1)
 
         self.machine.stop()
+        self.hardware.close()
         self.db.close()
 
 
