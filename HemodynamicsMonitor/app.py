@@ -6,7 +6,7 @@ from PyQt6.QtCore import QTimer
 from src.patientEngine import PatientEngine
 from src.hemodynamicMonitor import HemodynamicMonitor
 from src.waveform import ArterialWaveform
-from src.tcpServer import TCPServer
+from src.hardware import HardwareInterface
 from src.therapyEngine import TherapyEngine
 from src.dataLogger import DataLogger
 
@@ -27,8 +27,12 @@ class HemodynamicSimulator:
         self.monitor    = HemodynamicMonitor(self.patient)
         self.waveform   = ArterialWaveform()
 
-        self.tcp = TCPServer()
-        self.tcp.start()
+        self.hardware = HardwareInterface(
+            mode="Ethernet UDP",
+            serial_port="/tmp/ttyV5",  # Unique virtual cable for the Oximeter
+            ip="127.0.0.1",
+            net_port=8000              # Pointing to the Linux Master Aggregator
+        )
 
         # -----------------
         # GUI
@@ -52,6 +56,7 @@ class HemodynamicSimulator:
                 self.therapy.start_cpr() if checked else self.therapy.stop_cpr()
             ),
         )
+        self.window.connectHardwareMode(self.set_hardware_mode)
 
         # -----------------
         # Timer — 50 ms tick
@@ -78,7 +83,7 @@ class HemodynamicSimulator:
         # 5. Update GUI
         self.window.update_display(
             data,
-            tcp_connected   = self.tcp.is_connected(),
+            tcp_connected   = self.hardware.connected,
             therapy_status  = self.therapy.status(),
         )
 
@@ -92,19 +97,23 @@ class HemodynamicSimulator:
             self.window.trend.add_value(data["MAP"])
 
         # 8. TCP packet
-        packet = (
-            f"{data['HR']},"
-            f"{data['SBP']},"
-            f"{data['DBP']},"
-            f"{data['MAP']},"
-            f"{data['CO']},"
-            f"{data['CVP']},"
-            f"{data['RR']},"
-            f"{data['SpO2']},"
-            f"{data['Scenario']},"
-            f"{data['Alarm']}"
-        )
-        self.tcp.send(packet)
+        packet = {
+            "device_id": "HEMO-CARDIO-01",
+            "hr": data["HR"],
+            "sbp": data["SBP"],
+            "dbp": data["DBP"],
+            "map": data["MAP"],
+            "co": data["CO"],
+            "cvp": data["CVP"],
+            "rr": data["RR"],
+            "spo2": data["SpO2"],
+            "status": data["Scenario"],
+            "alarms": [data["Alarm"]] if data["Alarm"] != "NORMAL" else []
+        }
+        self.hardware.send_data(packet)
+
+    def set_hardware_mode(self, mode):
+        self.hardware.configure(mode=mode)
 
     def show(self):
         self.window.show()

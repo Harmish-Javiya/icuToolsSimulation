@@ -1,7 +1,7 @@
 from pathlib import Path
 import sys
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
@@ -10,5 +10,5 @@ from shared_hardware_engine import UnifiedHardwareEngine
 
 class HardwareInterface(UnifiedHardwareEngine):
     def __init__(self, *args, **kwargs):
-        kwargs.setdefault("device_name", "Ventilator")
+        kwargs.setdefault("device_name", "CRRT")
         super().__init__(*args, **kwargs)

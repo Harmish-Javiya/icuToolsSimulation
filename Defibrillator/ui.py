@@ -70,6 +70,7 @@ class DefibrillatorApp:
         self.virtual_perf_var = tk.StringVar(value="1.8")
         self.virtual_signal_var = tk.StringVar(value="95")
         self.virtual_alarm_var = tk.StringVar(value="OK")
+        self.hardware_mode_var = tk.StringVar(value=self.simulator.hardware.mode)
 
         self.rhythm_values = [r.value for r in Rhythm]
         self.mode_values = [m.value for m in Mode]
@@ -400,6 +401,25 @@ class DefibrillatorApp:
                   padx=10, pady=7, font=self._f(9, "bold"),
                   command=self.trigger_alarm_test).pack(side="left", fill="x", expand=True)
 
+        # ── HARDWARE OUTPUT ───────────────────────────────────────────────
+        hw_panel = self._panel(right, "HARDWARE OUTPUT")
+        hw_panel.pack(fill="x", pady=(0, 8))
+        hw_inner = tk.Frame(hw_panel, bg=CARD)
+        hw_inner.pack(fill="x", padx=10, pady=(0, 8))
+
+        tk.Label(hw_inner, text="Telemetry route:", fg=DIM, bg=CARD,
+                 font=self._f(8)).pack(anchor="w", pady=(0, 4))
+        self.hardware_combo = ttk.Combobox(
+            hw_inner,
+            textvariable=self.hardware_mode_var,
+            values=("Console", "RS232", "Ethernet UDP", "Ethernet TCP"),
+            state="readonly",
+            width=26,
+            font=self._f(10),
+        )
+        self.hardware_combo.pack(fill="x")
+        self.hardware_combo.bind("<<ComboboxSelected>>", lambda e: self.apply_hardware_mode())
+
         # ── VIRTUAL OUTPUT PORT ───────────────────────────────────────────
         v_panel = self._panel(right, "VIRTUAL OUTPUT PORT")
         v_panel.pack(fill="x", pady=(0, 8))
@@ -579,6 +599,12 @@ class DefibrillatorApp:
         if sel in self.mode_map:
             self.select_mode(self.mode_map[sel])
             messagebox.showinfo("Mode", f"Mode set to {sel}.")
+
+    def apply_hardware_mode(self):
+        mode = self.hardware_mode_var.get()
+        self.simulator.hardware.configure(mode=mode)
+        self.simulator.add_event(f"Hardware output set to {mode}")
+        self._refresh_display()
 
     # ── device actions ────────────────────────────────────────────────────────
     def charge_device(self):

@@ -15,7 +15,7 @@ from src.ecgLogging import DataLogger
 ui.dark_mode().enable()
 
 ecg = ECGEngine(heart_rate=75.0)
-hardware = HardwareInterface(mode="RS232", serial_port="/tmp/ttyV0", baudrate=9600)
+hardware = HardwareInterface(mode="Ethernet UDP", serial_port="/tmp/ttyV2", ip="127.0.0.1", net_port=8000)
 alarm_sys = CardiacAlarmSystem()
 csv_logger = DataLogger()
 
@@ -82,7 +82,7 @@ def simulation_tick():
                         active_alarms)
 
     telemetry_payload = {
-        "device_id": "ICU-BED-04",
+        "device_id": "ECG-CARDIO-01",
         "timestamp": datetime.utcnow().isoformat() + "Z",
         "heart_rate": vitals["hr"],
         "voltages": vitals["voltages"],
@@ -148,6 +148,11 @@ def change_channel(slot_index: int, e):
     refresh_dropdowns()
 
 
+def change_hardware_port(e):
+    hardware.configure(mode=e.value)
+    ui.notify(f"Output switched to {e.value}", type="info")
+
+
 # ==========================================
 # 4. DASHBOARD LAYOUT (HIGH-END CLINICAL UI)
 # ==========================================
@@ -190,6 +195,12 @@ with ui.row().classes('w-full max-w-[1800px] mx-auto p-6 gap-6'):
                                                on_change=lambda e: change_channel(3, e)).classes('w-full'))
 
             refresh_dropdowns()
+
+        with ui.card().classes('w-full bg-[#0c0c0e] border border-gray-800/40 p-6 rounded-2xl shadow-xl'):
+            ui.label("TELEMETRY ROUTING").classes(
+                'text-gray-500 text-[10px] font-bold uppercase tracking-[0.2em] mb-4')
+            ui.toggle(["RS232", "Ethernet UDP", "Ethernet TCP"], value="RS232", on_change=change_hardware_port).classes(
+                'w-full shadow-none')
 
         with ui.card().classes('w-full bg-[#0c0c0e] border border-gray-800/40 p-6 rounded-2xl shadow-xl'):
             ui.label("CLINICAL SCENARIOS").classes(
@@ -237,4 +248,4 @@ with ui.row().classes('w-full max-w-[1800px] mx-auto p-6 gap-6'):
         with ui.card().classes('w-full h-full bg-[#0c0c0e] border border-gray-800/40 rounded-2xl p-1 shadow-2xl'):
             graph = ui.plotly(fig).classes('w-full h-full')
 
-ui.run(title="4-Channel ECG Monitor", port=8001, dark=True)
+ui.run(title="4-Channel ECG Monitor", port=8082, dark=True)

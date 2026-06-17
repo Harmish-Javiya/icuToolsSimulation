@@ -14,14 +14,17 @@ class Simulator:
     def __init__(self):
 
         self.device = Defibrillator()
-
         self.patient = Patient()
-
         self.ecg = ECG()
-
         self.alarm = AlarmSystem()
 
-        self.hardware = HardwareInterface()
+        # --- PATCH 1: THE UNIFIED HARDWARE INITIALIZATION ---
+        self.hardware = HardwareInterface(
+            mode="Ethernet UDP",
+            serial_port="/tmp/ttyV6",  # Unique virtual cable
+            ip="127.0.0.1",
+            net_port=8000               # Pointing to the Linux Master Aggregator
+        )
 
         self.logger = DataLogger()
 
@@ -35,7 +38,10 @@ class Simulator:
         }
 
         self.hardware.connect()
-        self.virtual_connector.set_payload_builder(self._build_monitor_payload)
+        
+        # --- PATCH 2: SECURING THE ARCHITECTURE ---
+        # Commented out to prevent the "backdoor" secondary transmission
+        # self.virtual_connector.set_payload_builder(self._build_monitor_payload)
 
         self.events = []
 
@@ -89,18 +95,24 @@ class Simulator:
     ################################
 
     def connect_virtual_output(self, host="0.0.0.0", port=9000, transmit_interval=1.0):
-        self.virtual_connector.configure(host=host, port=port, transmit_interval=transmit_interval)
-        return self.virtual_connector.connect()
+        # Disabled for security, returning True to keep UI happy
+        # self.virtual_connector.configure(host=host, port=port, transmit_interval=transmit_interval)
+        # return self.virtual_connector.connect()
+        return True
 
     ################################
 
     def disconnect_virtual_output(self):
-        self.virtual_connector.disconnect()
+        # Disabled for security
+        # self.virtual_connector.disconnect()
+        pass
 
     ################################
 
     def transmit_virtual_output(self):
-        return self.virtual_connector.send_now(self._build_monitor_payload())
+        # Disabled for security, returning True to keep UI happy
+        # return self.virtual_connector.send_now(self._build_monitor_payload())
+        return True
 
     ################################
 

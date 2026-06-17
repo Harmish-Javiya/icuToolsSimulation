@@ -29,7 +29,12 @@ class SimulatorController:
         self.fluid = FluidBalance()
         self.scenario = ScenarioEngine()
         self.alarm_engine = AlarmEngine()
-        self.hardware = HardwareInterface(mode="Ethernet", ip="127.0.0.1", net_port=5008)
+        self.hardware = HardwareInterface(
+            mode="Ethernet UDP", 
+            serial_port="/tmp/ttyV7", 
+            ip="127.0.0.1", 
+            net_port=8000               
+        )
         self.db = Database()
         self.stop_event = threading.Event()
         self.lock = threading.Lock()
@@ -75,9 +80,16 @@ class SimulatorController:
             self.filter_model.replace_filter()
             self.state_manager.append_event("Filter replaced successfully")
 
+    def set_hardware_mode(self, mode):
+
+        with self.lock:
+            self.hardware.configure(mode=mode)
+            self.state_manager.append_event(f"Telemetry output set to {mode}")
+
     def _build_snapshot(self, alarms):
 
         return {
+            "device_id": "CRRT-RENAL-01",
             **self.patient.get_snapshot(),
             "pressure": self.pressure.get_snapshot(),
             "filter": self.filter_model.get_snapshot(),
@@ -143,7 +155,8 @@ def main():
         state_provider=get_simulator_state,
         on_control_change=controller.update_parameter,
         on_replace_filter=controller.replace_filter,
-            on_start=controller.start_machine,
+        on_start=controller.start_machine,
+        on_hardware_change=controller.set_hardware_mode,
         on_close=controller.stop_event.set,
     )
 

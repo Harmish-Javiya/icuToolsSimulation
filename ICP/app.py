@@ -23,10 +23,7 @@ icp = ICPEngine(base_icp=10.0, simulated_hr=75.0)
 alarm_sys = ICPAlarmSystem()
 csv_logger = DataLogger()
 
-# Initialize with "Both" so the OS opens the socket AND the serial port in the background
-hardware = HardwareInterface(mode="Both", ip="127.0.0.1", net_port=5006)
-# Immediately set the active routing mode to the requested default
-hardware.mode = "RS232"
+hardware = HardwareInterface(mode="Ethernet UDP", serial_port="/tmp/ttyV1", ip="127.0.0.1", net_port=8000)
 
 app_state = {
     "is_running": False,
@@ -136,7 +133,7 @@ def inject_scenario(scenario: str, label: str):
 
 def update_telemetry_mode(e):
     """Dynamically routes the outbound telemetry data."""
-    hardware.mode = e.value
+    hardware.configure(mode=e.value)
     logger.info(f"Telemetry output routed to: {e.value}")
 
 
@@ -158,7 +155,7 @@ with ui.row().classes('w-full max-w-[1800px] mx-auto p-6 gap-6'):
         # TELEMETRY ROUTING CARD
         with ui.card().classes('w-full bg-[#0c0c0e] border border-gray-800/40 p-4 rounded-2xl shadow-xl'):
             ui.label("TELEMETRY ROUTING").classes('text-gray-500 text-[10px] font-bold uppercase tracking-[0.2em] mb-2')
-            ui.toggle(["RS232", "Ethernet", "Both"], value="RS232", on_change=update_telemetry_mode).classes(
+            ui.toggle(["RS232", "Ethernet UDP", "Ethernet TCP"], value="RS232", on_change=update_telemetry_mode).classes(
                 'w-full shadow-none')
 
         # MAIN ICP CARD
@@ -252,4 +249,4 @@ with ui.row().classes('w-full max-w-[1800px] mx-auto p-6 gap-6'):
                                                                                  "SEVERE INTRACRANIAL HYPERTENSION")).classes(
                 'w-full mt-2 bg-red-950/20 border border-red-900/50 hover:bg-red-900/40 text-red-400 text-xs tracking-wider transition-all rounded-lg py-3')
 
-ui.run(title="ICP Simulator", port=8002, dark=True)
+ui.run(title="ICP Simulator", port=8081, dark=True)

@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QGridLayout,
     QFrame,
+    QComboBox,
 )
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QFont
@@ -62,9 +63,10 @@ class MainWindow(QMainWindow):
             port=5000
         )
         self.hardware = HardwareInterface(
-            mode="Ethernet",
+            mode="Ethernet UDP",
+            serial_port="/tmp/ttyV4",  # Unique virtual cable for the Oximeter
             ip="127.0.0.1",
-            net_port=5005
+            net_port=8000              # Pointing to the Linux Master Aggregator
         )
 
         self._muted = False          # audio mute flag passed to Alarm
@@ -97,6 +99,14 @@ class MainWindow(QMainWindow):
                 background: #330000;
                 color: #ff4444;
                 border: 1px solid #ff0000;
+            }
+            QComboBox {
+                background: #14231c;
+                color: #7dffc2;
+                border: 1px solid #2f5c45;
+                border-radius: 8px;
+                padding: 6px 10px;
+                font-weight: 600;
             }
             #screenPanel { background: #0d1712; border: 1px solid #27463a; border-radius: 18px; }
             #card { background: #0f1914; border: 1px solid #2b4d3a; border-radius: 14px; }
@@ -138,6 +148,11 @@ class MainWindow(QMainWindow):
 
         titleRow.addWidget(title)
         titleRow.addStretch()
+        self.hardwareMode = QComboBox()
+        self.hardwareMode.addItems(["RS232", "Ethernet UDP", "Ethernet TCP"])
+        self.hardwareMode.setCurrentText("Ethernet UDP")
+        self.hardwareMode.currentTextChanged.connect(self._set_hardware_mode)
+        titleRow.addWidget(self.hardwareMode)
         titleRow.addWidget(self.tcpLabel)
         panel_layout.addLayout(titleRow)
 
@@ -277,6 +292,9 @@ class MainWindow(QMainWindow):
         self.alarm.muted = checked
         self.muteBtn.setText("🔇 Muted" if checked else "🔇 Mute Alarm")
 
+    def _set_hardware_mode(self, mode):
+        self.hardware.configure(mode=mode)
+
     def _blink_alarm(self):
         """Toggle alarm label visibility when alarms are active."""
         if not self._active_alarms:
@@ -303,6 +321,9 @@ class MainWindow(QMainWindow):
 
     def updateMonitor(self):
         data = self.device.read()
+
+        data["device_id"] = "SPO2-PULMO-01"
+
         self.tcp.send(data)
         self.hardware.send_data(data)
 

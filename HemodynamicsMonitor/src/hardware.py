@@ -10,14 +10,5 @@ from shared_hardware_engine import UnifiedHardwareEngine
 
 class HardwareInterface(UnifiedHardwareEngine):
     def __init__(self, *args, **kwargs):
-        kwargs.setdefault("device_name", "Pulse oximeter")
-        super().__init__(*args, **kwargs)
-
-
-class Hardware(HardwareInterface):
-    """Backward-compatible name for older pulse oximeter code."""
-
-    def __init__(self, *args, **kwargs):
-        if not args and "mode" not in kwargs:
-            kwargs["mode"] = "Console"
+        kwargs.setdefault("device_name", "Hemodynamics")
         super().__init__(*args, **kwargs)

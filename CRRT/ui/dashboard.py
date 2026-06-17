@@ -10,7 +10,15 @@ from .waveform_panel import WaveformPanel
 
 class MedicalDashboard(tk.Tk):
 
-    def __init__(self, state_provider=None, on_control_change=None, on_replace_filter=None, on_start=None, on_close=None):
+    def __init__(
+        self,
+        state_provider=None,
+        on_control_change=None,
+        on_replace_filter=None,
+        on_start=None,
+        on_close=None,
+        on_hardware_change=None,
+    ):
 
         super().__init__()
         self.state_provider = state_provider
@@ -18,6 +26,7 @@ class MedicalDashboard(tk.Tk):
         self.on_replace_filter = on_replace_filter
         self.on_start = on_start
         self.on_close = on_close
+        self.on_hardware_change = on_hardware_change
         self._last_graph_step = None
         self._last_alarm_signature = None
         self._seen_event_count = 0
@@ -121,6 +130,24 @@ class MedicalDashboard(tk.Tk):
             pady=8,
         )
         self.therapy_banner.pack(anchor="e", pady=(8, 0))
+
+        tk.Label(
+            status_block,
+            text="Telemetry",
+            bg=self.bg,
+            fg=self.muted,
+            font=("Segoe UI", 9, "bold"),
+        ).pack(anchor="e", pady=(10, 2))
+        self.hardware_mode_var = tk.StringVar(value="Ethernet UDP")
+        self.hardware_mode_combo = ttk.Combobox(
+            status_block,
+            textvariable=self.hardware_mode_var,
+            values=("RS232", "Ethernet UDP", "Ethernet TCP"),
+            state="readonly",
+            width=18,
+        )
+        self.hardware_mode_combo.pack(anchor="e")
+        self.hardware_mode_combo.bind("<<ComboboxSelected>>", self._handle_hardware_change)
 
         action_block = tk.Frame(status_block, bg=self.bg)
         action_block.pack(anchor="e", pady=(10, 0))
@@ -267,6 +294,11 @@ class MedicalDashboard(tk.Tk):
 
         if callable(self.on_start):
             self.on_start()
+
+    def _handle_hardware_change(self, *_):
+
+        if callable(self.on_hardware_change):
+            self.on_hardware_change(self.hardware_mode_var.get())
 
     def _refresh_loop(self):
 

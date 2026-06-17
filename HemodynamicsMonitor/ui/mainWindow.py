@@ -5,7 +5,8 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QHBoxLayout,
     QGridLayout,
-    QProgressBar
+    QProgressBar,
+    QComboBox
 )
 
 from PyQt6.QtCore import Qt, QTimer
@@ -55,6 +56,13 @@ class MainWindow(QWidget):
             }
             QProgressBar::chunk {
                 background-color: #00aa00;
+            }
+            QComboBox {
+                background-color: #202020;
+                color: white;
+                padding: 6px;
+                border: 1px solid #444;
+                border-radius: 4px;
             }
         """)
 
@@ -168,11 +176,17 @@ class MainWindow(QWidget):
 
         self.scenario = QLabel("Scenario: Healthy")
         self.alarm    = QLabel("Alarm: NORMAL")
-        self.tcp      = QLabel("TCP: Waiting...")
+        self.hardwareMode = QComboBox()
+        self.hardwareMode.addItems(["RS232", "Ethernet UDP", "Ethernet TCP"])
+        self.hardwareMode.setCurrentText("Ethernet UDP")
+        self.tcp      = QLabel("Output: Waiting...")
 
-        for lbl in [self.scenario, self.alarm, self.tcp]:
+        for lbl in [self.scenario, self.alarm]:
             lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
             status.addWidget(lbl)
+        status.addWidget(self.hardwareMode)
+        self.tcp.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        status.addWidget(self.tcp)
 
         mainLayout.addLayout(status)
 
@@ -225,10 +239,10 @@ class MainWindow(QWidget):
 
         # TCP
         if tcp_connected:
-            self.tcp.setText("TCP: Online")
+            self.tcp.setText("Output: Online")
             self.tcp.setStyleSheet("color: lime;")
         else:
-            self.tcp.setText("TCP: Offline")
+            self.tcp.setText("Output: Offline")
             self.tcp.setStyleSheet("color: gray;")
 
         # Therapy dose bars
@@ -279,3 +293,6 @@ class MainWindow(QWidget):
         self.noradBtn.clicked.connect(norad)
         # CPR is a toggle — pass current checked state to handler
         self.cprBtn.toggled.connect(cpr_toggle)
+
+    def connectHardwareMode(self, handler):
+        self.hardwareMode.currentTextChanged.connect(handler)

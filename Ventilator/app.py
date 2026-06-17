@@ -32,7 +32,12 @@ app_state = {
     "is_running": False,
     "current_time": 0.0,
     "dt": 0.1,
-    "hardware": HardwareInterface(mode="RS232")
+    "hardware": HardwareInterface(
+        mode="Ethernet UDP",
+        serial_port="/tmp/ttyV0",  # Unique cable for the Ventilator
+        ip="127.0.0.1", 
+        net_port=8000              # Standardized network port for the Master Aggregator
+    )
 }
 
 
@@ -91,6 +96,7 @@ def simulation_tick():
     fig.data[1].y = tuple(history["flow"])
 
     telemetry_packet = {
+        "device_id": "VENT-PULMO-01",
         "time": round(app_state["current_time"], 1),
         "paw": round(current_vitals["pressure"], 1),
         "flow": round(current_vitals["flow"], 2),
@@ -137,10 +143,7 @@ def inject_scenario(scenario: str):
 
 def change_hardware_port(e):
     selected_mode = e.value
-    # Close the old connection first to free up the port
-    app_state["hardware"].close()
-    # Initialize the new connection
-    app_state["hardware"] = HardwareInterface(mode=selected_mode)
+    app_state["hardware"].configure(mode=selected_mode)
     ui.notify(f"Output switched to {selected_mode}", type="info")
 
 
@@ -210,7 +213,7 @@ with ui.left_drawer(value=True).classes('bg-[#161618] border-r border-gray-800 p
 
     ui.label("🔌 Hardware Output").classes('text-sm font-bold text-gray-500 uppercase tracking-widest mb-2')
     sel_hw = ui.select(
-        ["RS232", "USB", "Ethernet"],
+        ["RS232", "Ethernet UDP", "Ethernet TCP"],
         value="RS232",
         on_change=change_hardware_port
     ).classes('w-full mb-4')
@@ -261,4 +264,4 @@ with ui.column().classes('w-full max-w-7xl mx-auto p-6'):
 # 5. EXECUTE APP
 # ==========================================
 # This starts the local server and opens your browser
-ui.run(title="ICU Ventilator Sim", port=8000, dark=True)
+ui.run(title="ICU Ventilator Sim", port=8080, dark=True)
