@@ -2,52 +2,57 @@ import math
 import random
 import logging
 
+# 1. IMPORT CENTRAL ENGINE
+from core.central_patient_engine import CentralPatientEngine
+
 logger = logging.getLogger(__name__)
 
+
 class ICPEngine:
-    def __init__(self, base_icp: float = 10.0, simulated_hr: float = 75.0):
+    def __init__(self, base_icp: float = 10.0):
+        # 2. CONNECT TO NETWORK
+        self.patient = CentralPatientEngine()
+
         self.target_icp = base_icp
         self.current_icp = base_icp
-        self.target_hr = simulated_hr
-        self.current_hr = simulated_hr
         self.time_passed = 0.0
 
     def apply_intervention(self, scenario: str) -> None:
+        # Notice we removed all the "target_hr" changes here!
+        # The heart rate will be handled by the ECG module reading the high ICP later.
         if scenario == "normal_neuro":
             self.target_icp = 10.0
-            self.target_hr = 75.0
         elif scenario == "mild_swelling":
-            self.target_icp = 18.0  # Just below the critical alarm threshold
-            self.target_hr = 65.0   # Heart rate starting to drop
+            self.target_icp = 18.0
         elif scenario == "brain_swelling":
-            self.target_icp = 35.0  # Massive, lethal herniation
-            self.target_hr = 45.0   # Severe Cushing's Bradycardia
+            self.target_icp = 35.0  # Massive herniation
         elif scenario == "treatment_hyperventilation":
-            # Medical treatment: Hyperventilating the patient blows off CO2,
-            # shrinking blood vessels in the brain and rapidly dropping ICP.
             self.target_icp = 12.0
-            self.target_hr = 85.0
         elif scenario == "treatment_drain_csf":
-            # Physically opening a valve to let fluid out (Instant physical relief)
-            self.target_icp = 8.0  # Drops below normal baseline
-            self.target_hr = 75.0  # Heart rate normalizes
+            self.target_icp = 8.0
         elif scenario == "treatment_mannitol":
-            # IV Drug that acts as a sponge, pulling water out of brain cells (Gradual)
-            self.target_icp = 14.0  # Safe, but slightly elevated
-            self.target_hr = 80.0
+            self.target_icp = 14.0
 
     def set_targets(self, target_icp: float, target_hr: float) -> None:
         """Allows direct manual override from the UI sliders."""
         self.target_icp = target_icp
-        self.target_hr = target_hr
+        # target_hr from the UI slider is ignored globally because Neuro doesn't own HR!
 
     def step(self, dt: float) -> dict:
         self.time_passed += dt
 
-        self.current_icp += (self.target_icp - self.current_icp) * (dt * 0.05)
-        self.current_hr += (self.target_hr - self.current_hr) * (dt * 0.05)
+        # 3. READ HEART RATE FROM NETWORK (Owned by ECG)
+        net_hr = self.patient.get("hr")
+        current_hr = net_hr if net_hr is not None else 75.0
 
-        beat_duration = 60.0 / max(0.1, self.current_hr)
+        # Step the ICP pressure
+        self.current_icp += (self.target_icp - self.current_icp) * (dt * 0.05)
+
+        # 4. PUBLISH ICP TO NETWORK (Owned by NEURO)
+        self.patient.update(source="NEURO", vital="icp", value=round(self.current_icp, 1))
+
+        # Waveform math relies on the global Heart Rate!
+        beat_duration = 60.0 / max(0.1, current_hr)
         time_in_beat = self.time_passed % beat_duration
         t_relative = time_in_beat - (beat_duration * 0.2)
 
@@ -72,5 +77,5 @@ class ICPEngine:
         return {
             "mean_icp": round(self.current_icp, 1),
             "waveform": round(final_pressure, 2),
-            "simulated_hr": round(self.current_hr, 1)
+            "simulated_hr": round(current_hr, 1)  # Pass the network HR to the UI
         }

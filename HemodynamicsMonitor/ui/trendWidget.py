@@ -1,6 +1,6 @@
-from PyQt6.QtWidgets import QWidget
-from PyQt6.QtGui import QPainter, QPen
-from PyQt6.QtCore import Qt
+from PySide6.QtWidgets import QWidget
+from PySide6.QtGui import QPainter, QPen
+from PySide6.QtCore import Qt
 
 
 class TrendWidget(QWidget):

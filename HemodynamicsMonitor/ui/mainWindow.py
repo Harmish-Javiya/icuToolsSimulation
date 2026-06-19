@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import (
+from PySide6.QtWidgets import (
     QWidget,
     QLabel,
     QPushButton,
@@ -9,10 +9,12 @@ from PyQt6.QtWidgets import (
     QComboBox
 )
 
-from PyQt6.QtCore import Qt, QTimer
+from PySide6.QtCore import Qt, QTimer
 
-from ui.waveformWidget import WaveformWidget
-from ui.trendWidget import TrendWidget
+# === THE FIX: Added 'ui.' to the import paths ===
+from .waveformWidget import WaveformWidget
+from .trendWidget import TrendWidget
+# ================================================
 
 
 class MainWindow(QWidget):

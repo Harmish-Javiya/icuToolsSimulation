@@ -1,9 +1,32 @@
+import sys
+from pathlib import Path
+
+# ==========================================
+# 0. CRITICAL PATH INJECTION
+# This MUST happen before any local imports!
+# ==========================================
+# __file__       -> app.py
+# .parent        -> ECG folder
+# .parent.parent -> ICU_Tools_Simulation (Root)
+ROOT_DIR = Path(__file__).resolve().parent.parent
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+
+
+# ==========================================
+# 1. STANDARD IMPORTS
+# ==========================================
 from nicegui import ui
 import plotly.graph_objects as go
 from collections import deque
 from datetime import datetime
 
-# Import all backend modules
+
+# ==========================================
+# 2. LOCAL MODULE IMPORTS
+# Now Python knows to look in the Root folder,
+# so it can successfully find 'core' when ecgEngine asks for it.
+# ==========================================
 from src.ecgEngine import ECGEngine
 from src.ecgHardware import HardwareInterface
 from src.ecgAlarm import CardiacAlarmSystem

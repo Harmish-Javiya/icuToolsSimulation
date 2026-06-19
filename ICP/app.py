@@ -1,3 +1,13 @@
+import sys
+from pathlib import Path
+
+# ==========================================
+# 0. CRITICAL PATH INJECTION
+# ==========================================
+ROOT_DIR = Path(__file__).resolve().parent.parent
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+
 from nicegui import ui
 import plotly.graph_objects as go
 from collections import deque
@@ -19,7 +29,7 @@ from src.icpLogging import DataLogger, logger
 ui.dark_mode().enable()
 
 # Initialize the Microservice Backend
-icp = ICPEngine(base_icp=10.0, simulated_hr=75.0)
+icp = ICPEngine(base_icp=10.0)
 alarm_sys = ICPAlarmSystem()
 csv_logger = DataLogger()
 
@@ -195,7 +205,7 @@ with ui.row().classes('w-full max-w-[1800px] mx-auto p-6 gap-6'):
             plot_bgcolor="rgba(0,0,0,0)",
             xaxis=dict(showgrid=True, gridcolor='#17171a', zeroline=False, showticklabels=False, title="Time"),
             yaxis=dict(range=[0, 50], showgrid=True, gridcolor='#17171a', zeroline=False, title="Pressure (mmHg)",
-                       titlefont=dict(color="#555", size=12), tickfont=dict(color="#555")),
+                       title_font=dict(color="#555", size=12), tickfont=dict(color="#555")),
             showlegend=False,
             hovermode=False
         )

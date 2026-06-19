@@ -1,6 +1,6 @@
-from PyQt6.QtWidgets import QWidget
-from PyQt6.QtGui import QPainter, QPen
-from PyQt6.QtCore import Qt
+from PySide6.QtWidgets import QWidget
+from PySide6.QtGui import QPainter, QPen
+from PySide6.QtCore import Qt
 
 
 class WaveformWidget(QWidget):
@@ -22,10 +22,14 @@ class WaveformWidget(QWidget):
         """
         Add a new waveform sample.
         """
+        # STRING SHIELD: Protect the graph from crashing if it receives "--" text
+        if not isinstance(value, (int, float)):
+            value = 0.0
 
         self.points.pop(0)
         self.points.append(value)
 
+        # Triggers the paintEvent to redraw the screen
         self.update()
 
     def paintEvent(self, event):
@@ -41,10 +45,8 @@ class WaveformWidget(QWidget):
         # -------------------
         # Draw grid
         # -------------------
-
         grid_pen = QPen(Qt.GlobalColor.darkGreen)
         grid_pen.setWidth(1)
-
         painter.setPen(grid_pen)
 
         grid_size = 40
@@ -56,31 +58,32 @@ class WaveformWidget(QWidget):
             painter.drawLine(0, y, width, y)
 
         # -------------------
-        # Draw waveform
+        # Draw waveform (Arterial Line)
         # -------------------
-
-        wave_pen = QPen(Qt.GlobalColor.green)
+        # Using a red pen for arterial blood pressure
+        wave_pen = QPen(Qt.GlobalColor.red)
         wave_pen.setWidth(2)
-
         painter.setPen(wave_pen)
 
         step_x = width / len(self.points)
 
-        baseline = height * 0.75
-
-        scale = height * 0.5
+        # === THE FIX: TRUE BLOOD PRESSURE SCALING ===
+        # Map values from 0 to 220 mmHg to fit inside the widget height
+        max_pressure = 220.0
+        scale = height / max_pressure
 
         for i in range(len(self.points) - 1):
 
             x1 = int(i * step_x)
             x2 = int((i + 1) * step_x)
 
-            y1 = int(baseline - self.points[i] * scale)
-            y2 = int(baseline - self.points[i + 1] * scale)
+            # Qt draws from the top down. We subtract from the bottom (height)
+            # so that 0 pressure is at the bottom and 120 pressure goes up.
+            y1 = int(height - (self.points[i] * scale))
+            y2 = int(height - (self.points[i + 1] * scale))
 
-            painter.drawLine(
-                x1,
-                y1,
-                x2,
-                y2
-            )
+            # Clamp limits just in case physics go wild so it doesn't bleed out of the box
+            y1 = max(0, min(height, y1))
+            y2 = max(0, min(height, y2))
+
+            painter.drawLine(x1, y1, x2, y2)

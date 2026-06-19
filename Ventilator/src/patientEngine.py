@@ -1,6 +1,7 @@
 import logging
 import random
 import math
+from core.central_patient_engine import CentralPatientEngine
 
 # Configure basic logging for the backend engine
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -29,7 +30,8 @@ class PatientEngine:
         # --- Current Active Properties ---
         self.compliance = self.baseline_compliance
         self.resistance = self.baseline_resistance
-        self.spo2 = self.target_spo2
+        self.patient = CentralPatientEngine()
+        self.spo2 = self.patient.get("spo2") if self.patient.get("spo2") is not None else 98.0
         self.fio2 = 0.21
 
         # --- Live State Variables ---
@@ -42,7 +44,6 @@ class PatientEngine:
         self.spont_rr = 12.0  # Patient's independent respiratory drive (breaths/min)
         self.patient_time = 0.0
         self.muscle_pressure = 0.0
-
 
     def apply_intervention(self, situation: str) -> None:
         """
@@ -80,6 +81,26 @@ class PatientEngine:
         self.current_flow = applied_flow
         self.patient_time += dt
 
+        # ========================================================
+        # 0. LISTEN FOR GLOBAL SCENARIO CHANGES
+        # ========================================================
+        global_scenario = self.patient.get("scenario")
+
+        if global_scenario in ["Sepsis", "Hemorrhage", "Shock", "Fever"]:
+            # Patient starts hyperventilating to compensate
+            self.spont_rr = 30.0
+        elif global_scenario == "Hypoxia" or global_scenario == "ARDS":
+            # Lungs instantly stiffen, destroying the SpO2 calculation
+            self.compliance = self.baseline_compliance * 0.30
+            self.spont_rr = 35.0
+        elif global_scenario == "Arrest":
+            # Patient stops breathing entirely
+            self.spont_rr = 0.0
+        elif global_scenario == "Healthy":
+            # Reset to baseline
+            self.spont_rr = 12.0
+            self.compliance = self.baseline_compliance
+
         # 1. Update lung volume (Integral of flow)
         self.current_volume += self.current_flow * dt
 
@@ -105,12 +126,6 @@ class PatientEngine:
         # The muscle pressure drops the airway pressure, which the ventilator can detect!
         self.airway_pressure = elastic_pressure + resistive_pressure + self.peep + self.muscle_pressure
 
-        # 2. Equation of Motion: Paw = (Volume / Compliance) + (Resistance * Flow) + PEEP
-        elastic_pressure = self.current_volume / self.compliance
-        resistive_pressure = self.resistance * self.current_flow
-
-        self.airway_pressure = elastic_pressure + resistive_pressure + self.peep
-
         # 3. Dynamic SpO2 Estimation (UNIFIED LUNG HEALTH LOGIC)
         # Calculate a health factor for both compliance (stretch) and resistance (airways)
         compliance_health = self.compliance / self.baseline_compliance  # Normal = 1.0
@@ -130,6 +145,21 @@ class PatientEngine:
         # Cap target at 100%
         target_spo2 = min(100.0, target_spo2)
 
+        # ========================================================
+        # 4. CROSS-MODULE PHYSIOLOGY: PERFUSION & CARDIAC ARREST
+        # ========================================================
+        net_hr = self.patient.get("hr")
+
+        if net_hr is not None:
+            if net_hr <= 5.0:
+                # Cardiac Arrest: Blood is completely stagnant. SpO2 instantly crashes to 0.
+                target_spo2 = 0.0
+            elif net_hr < 50.0:
+                # Severe Bradycardia: The heart isn't moving enough blood to the lungs.
+                # For every beat the HR drops below 50, the SpO2 loses its ability to stay at 100%
+                perfusion_penalty = (50.0 - net_hr) * 0.5
+                target_spo2 -= perfusion_penalty
+
         # Smoothly slide the current SpO2 toward the target over time
         spo2_error = target_spo2 - self.spo2
 
@@ -139,12 +169,21 @@ class PatientEngine:
         else:
             self.spo2 += spo2_error * (dt * 0.2)
 
+        # Allow SpO2 to drop all the way to 0.0 if the heart stops!
+        self.spo2 = max(0.0, min(100.0, self.spo2))
+
+        # Update global patient state
+        self.patient.update(
+            source="VENT",
+            vital="spo2",
+            value=round(self.spo2, 1)
+        )
+
     def get_state(self) -> dict:
         """
         Returns a dictionary of the patient's current vital statistics.
         """
         # Add slight Gaussian noise to simulate sensor inaccuracy & cardiac oscillations
-        # random.gauss(mean, standard_deviation)
         p_noise = random.gauss(0, 0.3) if self.airway_pressure > 0 else 0
         f_noise = random.gauss(0, 0.02)
 
@@ -157,6 +196,7 @@ class PatientEngine:
             "resistance": round(self.resistance, 2)
         }
 
+
 if __name__ == "__main__":
     # A quick standalone test to verify the file works when run directly
     patient = PatientEngine("Adult")
@@ -168,3 +208,6 @@ if __name__ == "__main__":
         patient.update_physics(applied_flow=0.5, dt=0.1, ventilator_peep=5.0)
 
     logger.info(f"State after 1s of 0.5 L/s flow: {patient.get_state()}")
+
+    central = CentralPatientEngine()
+    print("Global SpO2:", central.get("spo2"))
