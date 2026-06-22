@@ -29,13 +29,14 @@ def main():
             ("ICP Monitor", "ICP/app.py"),
             ("Pulse Oximeter", "pulse oximeter/app.py"),
             ("Hemodynamics", "HemodynamicsMonitor/app.py"),
-            ("Defibrillator", "Defibrillator/main.py")
+            ("Defibrillator", "Defibrillator/main.py"),
+            # ("CRRT", "CRRT/main.py")
         ]
 
         # 3. BOOT THE ORGANS
         step = 2
         for name, path in modules:
-            print(f"[{step}/6] Starting {name}...")
+            print(f"[{step}/7] Starting {name}...")
             proc = subprocess.Popen([python_bin, path])
             processes.append(proc)
             step += 1
