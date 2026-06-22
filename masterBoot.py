@@ -14,7 +14,7 @@ def main():
 
     try:
         # 1. BOOT THE BRAIN (Central Server)
-        print("[1/6] Starting Central Patient Server...")
+        print("[1/7] Starting Central Patient Server...")
         server_process = subprocess.Popen([python_bin, "core/server.py"])
         processes.append(server_process)
 
@@ -28,7 +28,8 @@ def main():
             ("ECG", "ECG/app.py"),
             ("ICP Monitor", "ICP/app.py"),
             ("Pulse Oximeter", "pulse oximeter/app.py"),
-            ("Hemodynamics", "HemodynamicsMonitor/app.py")
+            ("Hemodynamics", "HemodynamicsMonitor/app.py"),
+            ("Defibrillator", "Defibrillator/main.py")
         ]
 
         # 3. BOOT THE ORGANS

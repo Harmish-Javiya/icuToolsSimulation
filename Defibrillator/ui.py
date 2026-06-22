@@ -10,34 +10,34 @@ from src.patient import Rhythm
 from server import SimulatorHTTPServer
 
 # ── colour palette ────────────────────────────────────────────────────────────
-BG          = "#070b10"
-PANEL       = "#0d1520"
-CARD        = "#111e2d"
-BORDER      = "#1a2d42"
-TEXT        = "#c8d8e8"
-DIM         = "#5a7080"
-ACCENT      = "#00bfff"       # cyan-blue – primary interactive
-GREEN       = "#00e676"       # normal / ok
-YELLOW      = "#ffb300"       # warning
-RED         = "#ff1744"       # critical
-WHITE       = "#ffffff"
+BG = "#070b10"
+PANEL = "#0d1520"
+CARD = "#111e2d"
+BORDER = "#1a2d42"
+TEXT = "#c8d8e8"
+DIM = "#5a7080"
+ACCENT = "#00bfff"  # cyan-blue – primary interactive
+GREEN = "#00e676"  # normal / ok
+YELLOW = "#ffb300"  # warning
+RED = "#ff1744"  # critical
+WHITE = "#ffffff"
 
 # ── alarm visual config ───────────────────────────────────────────────────────
 ALARM_CFG = {
-    "NORMAL":   dict(bg="#0b1c10", border="#00e676", icon="●", icon_fg=GREEN,  title_fg=GREEN,  label="ALL CLEAR"),
-    "WARNING":  dict(bg="#1c1500", border="#ffb300", icon="▲", icon_fg=YELLOW, title_fg=YELLOW, label="WARNING"),
-    "CRITICAL": dict(bg="#1c0005", border="#ff1744", icon="✦", icon_fg=RED,    title_fg=RED,    label="CRITICAL ALERT"),
+    "NORMAL": dict(bg="#0b1c10", border="#00e676", icon="●", icon_fg=GREEN, title_fg=GREEN, label="ALL CLEAR"),
+    "WARNING": dict(bg="#1c1500", border="#ffb300", icon="▲", icon_fg=YELLOW, title_fg=YELLOW, label="WARNING"),
+    "CRITICAL": dict(bg="#1c0005", border="#ff1744", icon="✦", icon_fg=RED, title_fg=RED, label="CRITICAL ALERT"),
 }
 
 RHYTHM_LABELS = {
-    "Normal Sinus":              ("NS",  GREEN),
-    "Ventricular Fibrillation":  ("VF",  RED),
-    "Ventricular Tachycardia":   ("VT",  RED),
-    "SVT":                       ("SVT", YELLOW),
-    "Bradycardia":               ("BRD", YELLOW),
-    "Tachycardia":               ("TCH", YELLOW),
-    "PEA":                       ("PEA", RED),
-    "Asystole":                  ("ASY", RED),
+    "Normal Sinus": ("NS", GREEN),
+    "Ventricular Fibrillation": ("VF", RED),
+    "Ventricular Tachycardia": ("VT", RED),
+    "SVT": ("SVT", YELLOW),
+    "Bradycardia": ("BRD", YELLOW),
+    "Tachycardia": ("TCH", YELLOW),
+    "PEA": ("PEA", RED),
+    "Asystole": ("ASY", RED),
 }
 
 ENERGY_LEVELS = [50, 100, 150, 200, 300, 360]
@@ -134,12 +134,15 @@ class DefibrillatorApp:
         # right-side status pills
         pills = tk.Frame(topbar, bg=PANEL)
         pills.pack(side="right", padx=18)
-        self.device_status_var  = tk.StringVar(value="ONLINE")
-        self.device_mode_var    = tk.StringVar(value="MANUAL")
-        self.connection_var     = tk.StringVar(value="TCP: CONNECTED")
-        self._pill(pills, "STATUS", self.device_status_var,  GREEN).pack(side="left", padx=4)
-        self._pill(pills, "MODE",   self.device_mode_var,    ACCENT).pack(side="left", padx=4)
-        self._pill(pills, "",       self.connection_var,     YELLOW).pack(side="left", padx=4)
+        self.device_status_var = tk.StringVar(value="ONLINE")
+        self.device_mode_var = tk.StringVar(value="MANUAL")
+        self.scenario_var = tk.StringVar(value="HEALTHY")
+        self.connection_var = tk.StringVar(value="TCP: CONNECTED")
+
+        self._pill(pills, "STATUS", self.device_status_var, GREEN).pack(side="left", padx=4)
+        self._pill(pills, "MODE", self.device_mode_var, ACCENT).pack(side="left", padx=4)
+        self._pill(pills, "SCENARIO", self.scenario_var, YELLOW).pack(side="left", padx=4)
+        self._pill(pills, "", self.connection_var, DIM).pack(side="left", padx=4)
 
         # ── ALARM BANNER ───────────────────────────────────────────────────
         self.alarm_frame = tk.Frame(root, bg=PANEL, height=66)
@@ -147,8 +150,8 @@ class DefibrillatorApp:
         self.alarm_frame.pack_propagate(False)
         self.alarm_frame.configure(highlightbackground=BORDER, highlightthickness=1)
 
-        self.alarm_icon_lbl  = tk.Label(self.alarm_frame, text="●", fg=GREEN, bg=PANEL,
-                                        font=self._f(22, "bold"))
+        self.alarm_icon_lbl = tk.Label(self.alarm_frame, text="●", fg=GREEN, bg=PANEL,
+                                       font=self._f(22, "bold"))
         self.alarm_icon_lbl.pack(side="left", padx=(18, 8))
 
         alarm_text = tk.Frame(self.alarm_frame, bg=PANEL)
@@ -156,8 +159,8 @@ class DefibrillatorApp:
         self.alarm_title_lbl = tk.Label(alarm_text, text="ALL CLEAR", fg=GREEN, bg=PANEL,
                                         font=self._f(13, "bold"))
         self.alarm_title_lbl.pack(anchor="w")
-        self.alarm_msg_lbl   = tk.Label(alarm_text, text="System ready for monitoring",
-                                        fg=DIM, bg=PANEL, font=self._f(9))
+        self.alarm_msg_lbl = tk.Label(alarm_text, text="System ready for monitoring",
+                                      fg=DIM, bg=PANEL, font=self._f(9))
         self.alarm_msg_lbl.pack(anchor="w")
 
         # right side of banner – rhythm badge + mode tag
@@ -208,10 +211,10 @@ class DefibrillatorApp:
         cards_row.pack(fill="x", pady=(0, 8))
         self.vital_cards = {}
         for col, (label, key, unit) in enumerate([
-            ("HR",       "heart_rate", "bpm"),
-            ("SpO₂",     "spo2",       "%"),
-            ("BP",       "bp",         "mmHg"),
-            ("BATTERY",  "battery",    "%"),
+            ("HR", "heart_rate", "bpm"),
+            ("SpO₂", "spo2", "%"),
+            ("BP", "bp", "mmHg"),
+            ("BATTERY", "battery", "%"),
         ]):
             self._vital_card(cards_row, label, key, unit, col)
             cards_row.grid_columnconfigure(col, weight=1)
@@ -256,16 +259,16 @@ class DefibrillatorApp:
         btn_grid = tk.Frame(ctrl, bg=CARD)
         btn_grid.pack(fill="x", padx=10, pady=(0, 10))
 
-        self.charge_btn = self._btn(btn_grid, "⚡  CHARGE",  self.charge_device,   ACCENT)
-        self.shock_btn  = self._btn(btn_grid, "⚡  SHOCK",   self.deliver_shock,   RED)
-        self.stop_btn   = self._btn(btn_grid, "■  DISARM",   self.disarm_device,   YELLOW)
-        self.reset_btn  = self._btn(btn_grid, "↺  RESET BAT",self.recharge_device, DIM)
-        self.ecg_btn    = self._btn(btn_grid, "♥  ECG",      self.show_ecg,        ACCENT)
-        self.tele_btn   = self._btn(btn_grid, "📡  TELEMETRY",self.send_telemetry,  ACCENT)
+        self.charge_btn = self._btn(btn_grid, "⚡  CHARGE", self.charge_device, ACCENT)
+        self.shock_btn = self._btn(btn_grid, "⚡  SHOCK", self.deliver_shock, RED)
+        self.stop_btn = self._btn(btn_grid, "■  DISARM", self.disarm_device, YELLOW)
+        self.reset_btn = self._btn(btn_grid, "↺  RESET BAT", self.recharge_device, DIM)
+        self.ecg_btn = self._btn(btn_grid, "♥  ECG", self.show_ecg, ACCENT)
+        self.tele_btn = self._btn(btn_grid, "📡  TELEMETRY", self.send_telemetry, ACCENT)
 
         for i, btn in enumerate([self.charge_btn, self.shock_btn,
-                                  self.stop_btn,  self.reset_btn,
-                                  self.ecg_btn,   self.tele_btn]):
+                                 self.stop_btn, self.reset_btn,
+                                 self.ecg_btn, self.tele_btn]):
             btn.grid(row=i // 2, column=i % 2, padx=4, pady=4, sticky="ew")
         btn_grid.grid_columnconfigure(0, weight=1)
         btn_grid.grid_columnconfigure(1, weight=1)
@@ -317,7 +320,7 @@ class DefibrillatorApp:
         tk.Label(batt_row, text="BATTERY", fg=DIM, bg=CARD,
                  font=self._f(8)).pack(anchor="w")
         self.battery_bar = ttk.Progressbar(batt_row, orient="horizontal",
-                                            mode="determinate")
+                                           mode="determinate")
         self.battery_bar.pack(fill="x", pady=(2, 0))
         self.battery_lbl = tk.Label(batt_row, text="100 %", fg=GREEN, bg=CARD,
                                     font=self._f(9, "bold"))
@@ -344,7 +347,7 @@ class DefibrillatorApp:
         qr = tk.Frame(r_inner, bg=CARD)
         qr.pack(fill="x", pady=(0, 6))
         for abbr, rhythm in (("NS", Rhythm.NORMAL), ("VF", Rhythm.VF),
-                              ("VT", Rhythm.VT),    ("ASY", Rhythm.ASYSTOLE)):
+                             ("VT", Rhythm.VT), ("ASY", Rhythm.ASYSTOLE)):
             _, col = RHYTHM_LABELS.get(rhythm.value, ("?", ACCENT))
             b = tk.Button(qr, text=abbr, bg=PANEL, fg=col,
                           activebackground=col, activeforeground=BG,
@@ -377,7 +380,7 @@ class DefibrillatorApp:
 
         tgl_row = tk.Frame(m_inner, bg=CARD)
         tgl_row.pack(fill="x", pady=(0, 6))
-        self.sync_var   = tk.BooleanVar(value=False)
+        self.sync_var = tk.BooleanVar(value=False)
         self.pacing_var = tk.BooleanVar(value=False)
         tk.Checkbutton(tgl_row, text="Sync enabled", variable=self.sync_var,
                        bg=CARD, fg=TEXT, selectcolor=PANEL,
@@ -466,21 +469,29 @@ class DefibrillatorApp:
         btn_row.pack(fill="x", pady=(8, 0))
         tk.Button(btn_row, text="CONNECT", bg=GREEN, fg=BG,
                   activebackground="#00b35a", activeforeground=BG, bd=0, relief="flat",
-                  padx=8, pady=6, font=self._f(9, "bold"), command=self.connect_virtual_output).pack(side="left", fill="x", expand=True, padx=(0, 4))
+                  padx=8, pady=6, font=self._f(9, "bold"), command=self.connect_virtual_output).pack(side="left",
+                                                                                                     fill="x",
+                                                                                                     expand=True,
+                                                                                                     padx=(0, 4))
         tk.Button(btn_row, text="APPLY", bg=ACCENT, fg=BG,
                   activebackground="#0099cc", activeforeground=BG, bd=0, relief="flat",
-                  padx=8, pady=6, font=self._f(9, "bold"), command=self.apply_virtual_output).pack(side="left", fill="x", expand=True, padx=(0, 4))
+                  padx=8, pady=6, font=self._f(9, "bold"), command=self.apply_virtual_output).pack(side="left",
+                                                                                                   fill="x",
+                                                                                                   expand=True,
+                                                                                                   padx=(0, 4))
         tk.Button(btn_row, text="DISCONNECT", bg=YELLOW, fg=BG,
                   activebackground="#cc8800", activeforeground=BG, bd=0, relief="flat",
-                  padx=8, pady=6, font=self._f(9, "bold"), command=self.disconnect_virtual_output).pack(side="left", fill="x", expand=True)
+                  padx=8, pady=6, font=self._f(9, "bold"), command=self.disconnect_virtual_output).pack(side="left",
+                                                                                                        fill="x",
+                                                                                                        expand=True)
 
         # ── NETWORK ──────────────────────────────────────────────────────────
         net_panel = self._panel(right, "NETWORK")
         net_panel.pack(fill="x")
         n_inner = tk.Frame(net_panel, bg=CARD)
         n_inner.pack(fill="x", padx=10, pady=(0, 10))
-        self.host_var        = tk.StringVar(value="Host: 0.0.0.0")
-        self.port_var        = tk.StringVar(value=f"Port: {self.port}")
+        self.host_var = tk.StringVar(value="Host: 0.0.0.0")
+        self.port_var = tk.StringVar(value=f"Port: {self.port}")
         self.network_state_var = tk.StringVar(value="State: ONLINE")
         for var, fg in ((self.host_var, DIM), (self.port_var, DIM),
                         (self.network_state_var, GREEN)):
@@ -512,14 +523,18 @@ class DefibrillatorApp:
         return f
 
     def _btn(self, parent, text, command, color):
-        b = tk.Button(parent, text=text, bg=color, fg=BG if color != DIM else TEXT,
-                      activebackground=BORDER, activeforeground=WHITE,
-                      bd=0, relief="flat", padx=8, pady=8,
-                      font=self._f(9, "bold"), command=command)
-        b.bind("<Enter>", lambda e, b=b: b.config(bg=BORDER))
-        b.bind("<Leave>", lambda e, b=b, c=color: b.config(bg=c))
-        return b
+        b = tk.Label(parent, text=text, bg=color, fg=BG if color != DIM else TEXT,
+                     padx=8, pady=8, font=self._f(9, "bold"), cursor="hand2")
 
+        # Hover effects
+        b.bind("<Enter>", lambda e, btn=b: btn.config(bg=BORDER))
+        b.bind("<Leave>", lambda e, btn=b, c=color: btn.config(bg=c))
+
+        # Click effects (turns white for a fraction of a second when clicked)
+        b.bind("<ButtonPress-1>", lambda e, btn=b: btn.config(bg=WHITE, fg=BG))
+        b.bind("<ButtonRelease-1>", lambda e, btn=b, cmd=command: [btn.config(bg=BORDER), cmd()])
+
+        return b
     def _vital_card(self, parent, label, key, unit, col):
         frame = tk.Frame(parent, bg=CARD,
                          highlightbackground=BORDER, highlightthickness=1)
@@ -547,7 +562,7 @@ class DefibrillatorApp:
             # highlight active quick-btn
             for j, b in self._energy_btns.items():
                 b.config(bg=ACCENT if j == energy else PANEL,
-                         fg=BG    if j == energy else TEXT)
+                         fg=BG if j == energy else TEXT)
             self._refresh_display()
         except ValueError:
             messagebox.showwarning("Invalid Energy", "Choose a valid energy level.")
@@ -689,7 +704,7 @@ class DefibrillatorApp:
     # ── alarm banner ──────────────────────────────────────────────────────────
     def _set_alarm_banner(self, level, message, mode_name, rhythm_value):
         cfg = ALARM_CFG.get(level, ALARM_CFG["NORMAL"])
-        bg  = cfg["bg"]
+        bg = cfg["bg"]
 
         self.alarm_frame.configure(bg=bg, highlightbackground=cfg["border"])
         self.alarm_icon_lbl.configure(text=cfg["icon"], fg=cfg["icon_fg"], bg=bg)
@@ -727,7 +742,7 @@ class DefibrillatorApp:
         except Exception:
             pass
         for cmd in (["paplay", "/usr/share/sounds/alsa/Front_Center.wav"],
-                    ["aplay",  "/usr/share/sounds/alsa/Front_Center.wav"]):
+                    ["aplay", "/usr/share/sounds/alsa/Front_Center.wav"]):
             try:
                 subprocess.Popen(cmd, stdout=subprocess.DEVNULL,
                                  stderr=subprocess.DEVNULL)
@@ -737,13 +752,16 @@ class DefibrillatorApp:
 
     # ── main display refresh ──────────────────────────────────────────────────
     def _refresh_display(self):
-        status  = self.simulator.status()
-        device  = status["device"]
+        status = self.simulator.status()
+        device = status["device"]
         patient = status["patient"]
-        alarm   = status["alarm"]
+        alarm = status["alarm"]
 
         self.device_status_var.set(device["state"].upper())
         self.device_mode_var.set(device["mode"].upper())
+
+        # === THE FIX: UPDATE THE SCENARIO PILL ===
+        self.scenario_var.set(patient.get("scenario", "HEALTHY").upper())
 
         bat = device["battery"]
         self.battery_bar["value"] = bat
@@ -757,7 +775,7 @@ class DefibrillatorApp:
         self.vital_cards["battery"]["value"].set(str(bat))
 
         self._set_alarm_banner(alarm["level"], alarm["alarm"],
-                                device["mode"], patient["rhythm"])
+                               device["mode"], patient["rhythm"])
         self._update_button_states(device)
         self._refresh_events(status["events"])
         self._update_device_info(device, patient, alarm)
@@ -772,23 +790,23 @@ class DefibrillatorApp:
         self.last_alert_level = alarm["level"]
 
     def _update_button_states(self, device):
-        ok   = "normal"
+        ok = "normal"
         self.shock_btn.config(state=ok if device["state"] == "Ready" else "disabled")
 
     def _update_device_info(self, device, patient, alarm):
         self.device_info.configure(state="normal")
         self.device_info.delete("1.0", tk.END)
         lines = [
-            ("Mode",    device["mode"]),
-            ("State",   device["state"]),
-            ("Energy",  f"{device['energy']} J"),
+            ("Mode", device["mode"]),
+            ("State", device["state"]),
+            ("Energy", f"{device['energy']} J"),
             ("Battery", f"{device['battery']} %"),
-            ("Shocks",  str(device.get("shocks", "--"))),
-            ("Rhythm",  patient["rhythm"]),
-            ("HR",      f"{patient['heart_rate']} bpm"),
-            ("SpO₂",    f"{patient['spo2']} %"),
-            ("BP",      patient["bp"]),
-            ("Alarm",   alarm["alarm"]),
+            ("Shocks", str(device.get("shocks", "--"))),
+            ("Rhythm", patient["rhythm"]),
+            ("HR", f"{patient['heart_rate']} bpm"),
+            ("SpO₂", f"{patient['spo2']} %"),
+            ("BP", patient["bp"]),
+            ("Alarm", alarm["alarm"]),
         ]
         for k, v in lines:
             self.device_info.insert(tk.END, f"  {k:<10}{v}\n")
@@ -817,24 +835,37 @@ class DefibrillatorApp:
         alarm_level = self.last_alert_level or "NORMAL"
         wave_col = {
             "CRITICAL": RED,
-            "WARNING":  YELLOW,
+            "WARNING": YELLOW,
         }.get(alarm_level, GREEN)
 
         if len(self.waveform_samples) < 2:
             return
         step = w / max(1, len(self.waveform_samples) - 1)
-        pts  = [(i * step, mid - (v * 28)) for i, v in enumerate(self.waveform_samples)]
+        pts = [(i * step, mid - (v * 28)) for i, v in enumerate(self.waveform_samples)]
         c.create_line(pts, fill=wave_col, width=2, smooth=True)
 
     # ── tick (animation loop) ─────────────────────────────────────────────────
     def _tick(self):
+        self.simulator.update()  # Pings the network loop
         sample = self.simulator.ecg_sample()
         self.waveform_samples.append(sample)
+
         if len(self.waveform_samples) > 260:
             self.waveform_samples.pop(0)
-        self._render_waveform()
-        self._refresh_display()
-        self.root.after(500, self._tick)
+
+        self._render_waveform()  # Draw the green line smoothly at 20 FPS
+
+        # === THE FIX: Only refresh the heavy text/UI elements every 10 ticks (500ms) ===
+        if not hasattr(self, '_tick_counter'):
+            self._tick_counter = 0
+        self._tick_counter += 1
+
+        if self._tick_counter % 10 == 0:
+            self._refresh_display()
+            self.simulator.telemetry()
+
+        # Run 10x faster! (50ms instead of 500ms)
+        self.root.after(50, self._tick)
 
     # ── server ────────────────────────────────────────────────────────────────
     def _start_api_server(self):
@@ -868,12 +899,11 @@ class DefibrillatorApp:
             self.server.stop()
         self.root.destroy()
 
-
+# === EXTREME LEFT STARTING HERE! (OUTSIDE THE CLASS) ===
 def run_app(port=None):
     root = tk.Tk()
     app = DefibrillatorApp(root, port=port)
     root.mainloop()
-
 
 if __name__ == "__main__":
     run_app()

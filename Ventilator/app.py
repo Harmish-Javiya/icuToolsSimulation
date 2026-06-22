@@ -101,7 +101,6 @@ def simulation_tick():
         "paw": round(current_vitals["pressure"], 1),
         "flow": round(current_vitals["flow"], 2),
         "vol": round(current_vitals["volume"] * 1000, 0),
-        "spo2": round(current_vitals["spo2"], 1),
         "alarms": list(active_alarms)
     }
     app_state["hardware"].send_data(telemetry_packet)

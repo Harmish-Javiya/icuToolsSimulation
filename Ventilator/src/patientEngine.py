@@ -142,6 +142,13 @@ class PatientEngine:
         # If health is 1.0, base is 90% + 7.8% (from delivery) = ~98% SpO2
         target_spo2 = 70.0 + (lung_health * 20.0) + (oxygen_delivery * 0.3)
 
+        if global_scenario in ["Hemorrhage", "Shock"]:
+            target_spo2 -= 15.0  # Massive blood loss destroys oxygen delivery!
+        elif global_scenario in ["Sepsis", "Fever"]:
+            target_spo2 -= 4.0  # High fever burns up oxygen
+        elif global_scenario == "Heart Failure":
+            target_spo2 -= 8.0  # Fluid backs up into the lungs
+
         # Cap target at 100%
         target_spo2 = min(100.0, target_spo2)
 

@@ -107,7 +107,6 @@ def simulation_tick():
     telemetry_payload = {
         "device_id": "ECG-CARDIO-01",
         "timestamp": datetime.utcnow().isoformat() + "Z",
-        "heart_rate": vitals["hr"],
         "voltages": vitals["voltages"],
         "rhythm_status": app_state["active_rhythm"],
         "alarms": active_alarms

@@ -16,10 +16,17 @@ class ICPEngine:
         self.target_icp = base_icp
         self.current_icp = base_icp
         self.time_passed = 0.0
+        self.current_scenario = "Healthy"
 
     def apply_intervention(self, scenario: str) -> None:
-        # Notice we removed all the "target_hr" changes here!
-        # The heart rate will be handled by the ECG module reading the high ICP later.
+        """
+        Triggered by UI buttons.
+        """
+        # === THE FIX: BROADCAST SCENARIO TO NETWORK ===
+        self.patient.update(source="NEURO", vital="scenario", value=scenario)
+        self.current_scenario = scenario
+
+        # Internal physics response
         if scenario == "normal_neuro":
             self.target_icp = 10.0
         elif scenario == "mild_swelling":
@@ -33,13 +40,19 @@ class ICPEngine:
         elif scenario == "treatment_mannitol":
             self.target_icp = 14.0
 
-    def set_targets(self, target_icp: float, target_hr: float) -> None:
-        """Allows direct manual override from the UI sliders."""
-        self.target_icp = target_icp
-        # target_hr from the UI slider is ignored globally because Neuro doesn't own HR!
-
     def step(self, dt: float) -> dict:
         self.time_passed += dt
+
+        # === THE FIX: LISTEN FOR GLOBAL SCENARIOS ===
+        net_scenario = self.patient.get("scenario")
+        if net_scenario is not None and net_scenario != self.current_scenario:
+            self.current_scenario = net_scenario
+
+            # React to Hemodynamics/Shock scenarios
+            if net_scenario in ["Hemorrhage", "Shock", "Arrest"]:
+                self.target_icp = 4.0  # BP crashes, so brain pressure drops
+            elif net_scenario == "Healthy":
+                self.target_icp = 10.0
 
         # 3. READ HEART RATE FROM NETWORK (Owned by ECG)
         net_hr = self.patient.get("hr")
@@ -77,5 +90,5 @@ class ICPEngine:
         return {
             "mean_icp": round(self.current_icp, 1),
             "waveform": round(final_pressure, 2),
-            "simulated_hr": round(current_hr, 1)  # Pass the network HR to the UI
+            "simulated_hr": round(current_hr, 1)
         }

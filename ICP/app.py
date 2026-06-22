@@ -94,7 +94,6 @@ def simulation_tick():
         "device_id": "ICP-NEURO-01",
         "timestamp": datetime.utcnow().isoformat() + "Z",
         "mean_icp": neuro_data["mean_icp"],
-        "simulated_hr": neuro_data["simulated_hr"],
         "waveform_val": neuro_data["waveform"],
         "status": app_state["active_status"],
         "alarms": active_alarms

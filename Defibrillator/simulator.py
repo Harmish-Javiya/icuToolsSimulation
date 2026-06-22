@@ -186,22 +186,24 @@ class Simulator:
 
         self.update()
 
-    ################################
-
     def telemetry(self):
+        # Build the Thin Payload directly here, and include the latest action/event!
+        thin_packet = {
+            "device_id": "DEFIB-CARDIO-01",
+            "device": self.device.status(),
+            "alarm": self.alarm.status(),
+            "local_rhythm": self.patient.rhythm.value,
+            "latest_event": self.events[-1] if self.events else "System Ready"
+        }
 
-        self.hardware.send(
-            self.device,
-            self.patient,
-            self.alarm
-        )
-
-    ################################
+        # Transmit the payload
+        self.hardware.send_data(thin_packet)
 
     def ecg_sample(self):
-
+        # === THE FIX: Pass the global network heart rate to the ECG engine! ===
         return self.ecg.next_sample(
-            self.patient.rhythm
+            self.patient.rhythm,
+            self.patient.heart_rate
         )
 
     ################################
