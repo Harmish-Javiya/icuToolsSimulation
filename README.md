@@ -121,12 +121,12 @@ To ensure your code editor recognizes the dependencies and the Python 3.10 envir
 
 * Open the project folder in PyCharm.
 * Go to Settings (Windows/Linux: File -> Settings | macOS: PyCharm -> Settings).
-* Navigate to Project: [Your Project Name] -> Python Interpreter.
+* Navigate to Project: icuToolsSimulation -> Python Interpreter.
 * Click the "Add Interpreter" link or the gear icon next to the current interpreter dropdown, and select Add Local Interpreter...
 * Select Existing environment.
 * Point the path to the Python executable inside your virtual environment:
-* Windows: <project_root>\venv\Scripts\python.exe
-* Mac/Linux: <project_root>/venv/bin/python
+* Windows:icuToolsSimulation\venv\Scripts\python.exe
+* Mac/Linux: icuToolsSimulation/venv/bin/python
 * Click Apply and OK. PyCharm will begin indexing the installed packages.
 
 ## To Test Files
