@@ -132,7 +132,6 @@ To ensure your code editor recognizes the dependencies and the Python 3.10 envir
 ## To Test Files
 
 * we have to run 3 files to make it run
-* ``` python core/server.py ``` in 1st terminal
 * ``` python aggregator.py ``` in 2nd terminal
 * ``` python masterboot.py ``` in 3rd terminal (this will fire up all the tools included in this python code)
 
