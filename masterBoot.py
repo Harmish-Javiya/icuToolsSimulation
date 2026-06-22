@@ -30,6 +30,7 @@ def main():
             ("Pulse Oximeter", "pulse oximeter/app.py"),
             ("Hemodynamics", "HemodynamicsMonitor/app.py"),
             ("Defibrillator", "Defibrillator/main.py"),
+            ("InfusionPump", "InfusionPump/main.py")
             # ("CRRT", "CRRT/main.py")
         ]
 

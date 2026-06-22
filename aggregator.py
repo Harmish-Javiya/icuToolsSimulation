@@ -19,15 +19,19 @@ LOG_DIR = "logs"
 if not os.path.exists(LOG_DIR):
     os.makedirs(LOG_DIR)
 
-# Create a unique filename for this session based on the current time
-session_time = datetime.now().strftime("%Y%m%d_%H%M%S")
-JSON_LOG_FILE = os.path.join(LOG_DIR, f"icu_telemetry_{session_time}.json")
+# ---> CHANGED: USE A SINGLE STATIC FILE INSTEAD OF TIMESTAMPED ONES <---
+JSON_LOG_FILE = os.path.join(LOG_DIR, "icu_master_telemetry_log.json")
 
 
 def log_to_json_file(data_dict):
-    """Appends a JSON dictionary to the log file."""
+    """Appends a JSON dictionary to the single master log file."""
+    # Add a timestamp to the data if it doesn't already have one,
+    # so you can distinguish between different simulation runs in the single file.
+    if "timestamp" not in data_dict and "aggregator_timestamp" not in data_dict:
+        data_dict["aggregator_timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
     with open(JSON_LOG_FILE, 'a') as f:
-        # Write the JSON object on a new line
+        # Write the JSON object on a new line (JSON Lines format)
         json.dump(data_dict, f)
         f.write('\n')
 
@@ -36,8 +40,8 @@ def run_master_aggregator():
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.bind((UDP_IP, UDP_PORT))
 
-    logging.info(f"🎧 MASTER ICU Aggregator listening on {UDP_IP}:{UDP_PORT}...")
-    logging.info(f"💾 Saving JSON packets to: {JSON_LOG_FILE}\n")
+    logging.info(f"⚙️ MASTER ICU Aggregator listening on {UDP_IP}:{UDP_PORT}...")
+    logging.info(f"💾 Saving all JSON packets continuously to: {JSON_LOG_FILE}\n")
     logging.info("=" * 70)
 
     try:
@@ -48,7 +52,7 @@ def run_master_aggregator():
             try:
                 data = json.loads(raw_string)
 
-                # ---> SAVE TO FILE <---
+                # ---> SAVE TO THE SINGLE FILE <---
                 log_to_json_file(data)
 
                 device_id = data.get("device_id", "UNKNOWN")
@@ -63,9 +67,7 @@ def run_master_aggregator():
                     logging.info(
                         f"[🫁 VENT] Paw: {data.get('paw', '--')} | Vol: {data.get('vol', '--')} || Patient SpO2: {cached_vitals['spo2']}%")
 
-
                 elif "DEFIB-CARDIO" in device_id:
-
                     dev_state = data.get("device", {}).get("state", "--")
                     rhythm = data.get("local_rhythm", "--")
                     event = data.get("latest_event", "")
@@ -74,7 +76,7 @@ def run_master_aggregator():
 
                 elif "HEMO-CARDIO" in device_id:
                     logging.info(
-                        f"[🫀 HEMO] SV: {data.get('sv', '--')} | CVP: {data.get('cvp', '--')} || Patient BP: {cached_vitals['bp_sys']}/{cached_vitals['bp_dia']}")
+                        f"[🩸 HEMO] SV: {data.get('sv', '--')} | CVP: {data.get('cvp', '--')} || Patient BP: {cached_vitals['bp_sys']}/{cached_vitals['bp_dia']}")
 
                 elif "ICP-NEURO" in device_id:
                     logging.info(
