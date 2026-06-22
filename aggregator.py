@@ -80,6 +80,12 @@ def run_master_aggregator():
                     logging.info(
                         f"[🧠 NEURO] Local ICP: {data.get('mean_icp', '--')} || Global ICP: {cached_vitals['icp']}")
 
+                elif "PUMP-MED" in device_id:
+                    status = data.get("state", "--")
+                    flow = data.get("flow_rate", "--")
+                    infused = data.get("infused", "--")
+                    logging.info(f"[💧 PUMP] State: {status} | Rate: {flow} mL/hr | Infused: {infused} mL")
+
             except json.JSONDecodeError:
                 pass
 
