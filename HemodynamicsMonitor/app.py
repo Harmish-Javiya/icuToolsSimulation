@@ -107,14 +107,10 @@ class HemodynamicSimulator:
         # 8. TCP packet
         packet = {
             "device_id": "HEMO-CARDIO-01",
-            "hr": data["HR"],
-            "sbp": data["SBP"],
-            "dbp": data["DBP"],
             "map": data["MAP"],
             "co": data["CO"],
             "cvp": data["CVP"],
             "rr": data["RR"],
-            "spo2": data["SpO2"],
             "status": data["Scenario"],
             "alarms": [data["Alarm"]] if data["Alarm"] != "NORMAL" else []
         }

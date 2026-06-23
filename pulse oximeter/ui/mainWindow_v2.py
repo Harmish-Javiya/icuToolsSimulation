@@ -315,27 +315,38 @@ class MainWindow(QMainWindow):
         )
         self.alarmLabel.setStyleSheet(f"color: {txt_col}; font-size: 15px; font-weight: 800;")
 
-    # ──────────────────────────────────────────────────────────────────
-    # Main update loop
-    # ──────────────────────────────────────────────────────────────────
-
     def updateMonitor(self):
+        # 1. Read the full data (Globals + Locals) for the UI
         data = self.device.read()
 
-        data["device_id"] = "SPO2-PULMO-01"
+        # 2. CREATE THE THIN PAYLOAD (For the Aggregator)
+        # We strip out SpO2, HR, and Temp because the Master Server handles them!
+        thin_packet = {
+            "device_id": "SPO2-PULMO-01",
+            "battery": data.get("battery", 100),
+            "signal_quality": data.get("signal_quality", 0),
+            "sensor_connected": data.get("sensor_connected", False),
+            "finger_present": data.get("finger_present", False),
+            "motion": data.get("motion", False)
+        }
 
-        self.tcp.send(data)
-        self.hardware.send_data(data)
+        # 3. Transmit only the thin payload!
+        self.tcp.send(thin_packet)
+        self.hardware.send_data(thin_packet)
 
-        self.wave.set_heart_rate(data["heart_rate"])
+        # 4. Safely update the local waveform (String Shield for "--" values)
+        hr_val = data["heart_rate"]
+        safe_hr = hr_val if isinstance(hr_val, (int, float)) else 0.0
+        self.wave.set_heart_rate(safe_hr)
+
         self.wave.set_sensor(data["sensor_connected"])
         self.wave.set_motion(data["motion"])
         self.wave.set_signal(data["signal_quality"])
 
+        # 5. Update the UI text fields with the full data
         self.spo2.setText(f"{data['spo2']}%")
         self.pulse.setText(f"{data['heart_rate']} BPM")
         self.temp.setText(f"{data['temperature']}°C")
-
         self.battery.setText(f"{data['battery']}%")
 
         self.sensor.setText(
